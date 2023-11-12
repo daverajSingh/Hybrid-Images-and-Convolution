@@ -1,23 +1,17 @@
 import numpy as np
 import MyConvolution as myC
-import matplotlib.pyplot as plt
-from PIL import Image, ImageOps
+from PIL import Image
+import cv2
 
-def showImage(img: np.array):
-    plt.figure(figsize=(10,10))
-    plt.imshow(img, cmap='grey')
-    plt.show()
-
-image = Image.open(r'C:\Users\daver\PycharmProjects\COMP3204Handin1\dog.jpg')
-image = ImageOps.grayscale(image)
-image = image.resize(size=(1000,1000))
-image = np.array(image)
-
-showImage(img=image)
-print(image.shape)
+img = cv2.imread('C:/Users/daver/PycharmProjects/COMP3204Handin1/dog.jpg')
+cv2.imshow("image 1", img)
+cv2.waitKey(0)
+cv2.destroyAllWindows()
 kernel = np.array([[0, -1, 0], [-1, 5, -1], [0, -1, 0]])
-image = myC.convolve(image=image, kernel=kernel)
-showImage(img=image)
-print(image.shape)
+newImg = myC.convolve(img, kernel)
+newImg = Image.fromarray(newImg)
+cv2.imshow("image 2", newImg)
+cv2.waitKey(0)
+cv2.destroyAllWindows()
 
 
