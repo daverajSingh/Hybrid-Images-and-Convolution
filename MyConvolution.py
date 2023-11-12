@@ -15,26 +15,30 @@ def convolve(image: np.ndarray, kernel: np.ndarray) -> np.ndarray:
 
     # Your code here. You'll need to vectorise your implementation to ensure it runs  # at a reasonable speed.
     isColour = len(image.shape) == 3
+
     targetH, targetW = calculateImageSize(image.shape, kernel.shape)
-    kRows, kCols = kernel.shape[0], kernel.shape[1]
+
+    kHeight, kWidth = kernel.shape[0], kernel.shape[1]
+
     invertedKernel = invertMat(kernel)
-    paddingWidth = kCols // 2
-    paddingHeight = kRows // 2
+
+    paddingHeight = kHeight // 2
+    paddingWidth = kWidth // 2
 
     if(isColour):
         r,g,b = [image[:,:,i] for i in range(3)]
-        rConvolved = calcWeightSum(r, targetH, targetW, invertedKernel, kRows, kCols)
-        gConvolved = calcWeightSum(g, targetH, targetW, invertedKernel, kRows, kCols)
-        bConvolved = calcWeightSum(b, targetH, targetW, invertedKernel, kRows, kCols)
+        convolvedImage = np.zeros([targetH, targetW, 3], dtype=np.uint8)
 
-        print(rConvolved)
-        convolvedImage = np.zeros([targetH, targetW, 3])
+        rWeightedSums = calcWeightSum(r, targetH, targetW, invertedKernel, kWidth, kHeight)
+        gWeightedSums = calcWeightSum(g, targetH, targetW, invertedKernel, kWidth, kHeight)
+        bWeightedSums = calcWeightSum(b, targetH, targetW, invertedKernel, kWidth, kHeight)
 
         for i in range(targetH):
             for j in range(targetW):
-                convolvedImage[i, j] = [rConvolved[i][j], gConvolved[i][j], bConvolved[i][j]]
+                convolvedImage[i][j] = [int(rWeightedSums[i][j]), int(gWeightedSums[i][j]), int(bWeightedSums[i][j])]
+
     else:
-        convolvedImage = calcWeightSum(image, targetH, targetW, invertedKernel)
+        convolvedImage = calcWeightSum(image, targetH, targetW, invertedKernel, kWidth, kHeight)
     return addPadding(convolvedImage, paddingWidth, paddingHeight, isColour)
 
 def calcWeightSum(channel, height, width, kernel, kernelRows, kernelCols) -> np.ndarray:
@@ -42,7 +46,13 @@ def calcWeightSum(channel, height, width, kernel, kernelRows, kernelCols) -> np.
     for i in range(height):
         for j in range(width):
             domain = channel[i:i+kernelCols, j:j+kernelRows]
-            convolvedChannel[i, j] = np.sum(np.multiply(domain, kernel))
+            val = np.sum(np.multiply(domain, kernel))
+            if(val > 255):
+                convolvedChannel[i,j] = 255
+            elif(val < 0):
+                convolvedChannel[i, j] = 0
+            else:
+                convolvedChannel[i, j] = val
     return convolvedChannel
 
 def calculateImageSize(imgShape, kShape) -> (int, int):
@@ -65,10 +75,10 @@ def calculateImageSize(imgShape, kShape) -> (int, int):
 
 def addPadding(image, padW, padH, isColour) -> np.ndarray:
     if(isColour):
-        imageWithPadding = np.zeros(shape=(image.shape[0] + padH * 2, image.shape[1] + padW * 2, 3))
+        imageWithPadding = np.zeros(shape=(image.shape[0] + padH * 2, image.shape[1] + padW * 2, 3), dtype=np.uint8)
         imageWithPadding[padH:-padH, padW:-padW] = image
     else:
-        imageWithPadding = np.zeros(shape=(image.shape[0]+ padH*2, image.shape[1] + padW*2))
+        imageWithPadding = np.zeros(shape=(image.shape[0]+ padH*2, image.shape[1] + padW*2),dtype=np.uint8)
         imageWithPadding[padH:-padH, padW:-padW] = image
     return imageWithPadding
 
