@@ -13,81 +13,76 @@ def convolve(image: np.ndarray, kernel: np.ndarray) -> np.ndarray:
     :returns the convolved image (of the same shape as the input image)
     :rtype numpy.ndarray  """
 
-    # Your code here. You'll need to vectorise your implementation to ensure it runs  # at a reasonable speed.
+    # Checks if the picture is coloured or greyscale
     isColour = len(image.shape) == 3
 
-    targetH, targetW = calculateImageSize(image.shape, kernel.shape)
-
+    # Sizes of Image and Kernel
+    imageHeight, imageWidth = image.shape[0], image.shape[1]
     kHeight, kWidth = kernel.shape[0], kernel.shape[1]
 
-    invertedKernel = invertMat(kernel)
+    # Flip Kernel
+    kernel = invertMat(kernel)
 
+    # Padding Dimensions
     paddingHeight = kHeight // 2
     paddingWidth = kWidth // 2
 
-    if(isColour):
-        r,g,b = [image[:,:,i] for i in range(3)]
-        convolvedImage = np.zeros([targetH, targetW, 3], dtype=np.uint8)
+    # Convert to floats between 0 and 1
+    image = (image/255).astype(np.float64)
 
-        rWeightedSums = calcWeightSum(r, targetH, targetW, invertedKernel, kWidth, kHeight)
-        gWeightedSums = calcWeightSum(g, targetH, targetW, invertedKernel, kWidth, kHeight)
-        bWeightedSums = calcWeightSum(b, targetH, targetW, invertedKernel, kWidth, kHeight)
+    # Picture dimensions in the padded image
+    imageEdgeX = paddingWidth + imageWidth
+    imageEdgeY = paddingHeight + imageHeight
 
-        for i in range(targetH):
-            for j in range(targetW):
-                convolvedImage[i][j] = [int(rWeightedSums[i][j]), int(gWeightedSums[i][j]), int(bWeightedSums[i][j])]
+    # Create Zero-Padded Image
+    if isColour:
+        paddedImage = np.zeros((imageHeight + 2*paddingHeight, imageWidth + 2*paddingWidth, 3), dtype=np.float64)
+        paddedImage[paddingHeight:imageEdgeY, paddingWidth:imageEdgeX] = image
+
+        # Init Convolved Image
+        convolvedImage = np.zeros((imageHeight, imageWidth, 3), dtype=np.integer)
 
     else:
-        convolvedImage = calcWeightSum(image, targetH, targetW, invertedKernel, kWidth, kHeight)
-    return addPadding(convolvedImage, paddingWidth, paddingHeight, isColour)
+        paddedImage = np.zeros((imageHeight + 2 * paddingHeight, imageWidth + 2 * paddingWidth), dtype=np.float64)
+        paddedImage[paddingHeight:imageEdgeY, paddingWidth:imageEdgeX] = image
 
-def calcWeightSum(channel, height, width, kernel, kernelRows, kernelCols) -> np.ndarray:
-    convolvedChannel = np.zeros(shape=(height, width))
-    for i in range(height):
-        for j in range(width):
-            domain = channel[i:i+kernelCols, j:j+kernelRows]
-            val = np.sum(np.multiply(domain, kernel))
-            if(val > 255):
-                convolvedChannel[i,j] = 255
-            elif(val < 0):
-                convolvedChannel[i, j] = 0
-            else:
-                convolvedChannel[i, j] = val
-    return convolvedChannel
+        # Init Convolved Image
+        convolvedImage = np.zeros((imageHeight, imageWidth), dtype=np.integer)
 
-def calculateImageSize(imgShape, kShape) -> (int, int):
-    imgRows, imgCols = imgShape[0], imgShape[1]
-    kRows, kCols = kShape[0], kShape[1]
 
-    numRows = 0
-    numCols = 0
-    for i in range(imgRows):
-        x = i + kRows
-        if x <= imgRows:
-            numRows +=1
+    if isColour:
+        for ch in range(3): # Iterates through each channel
+            for i in range(imageHeight):
+                for j in range(imageWidth):
+                    domain = paddedImage[i:i+kWidth, j:j+kHeight, ch]
+                    weightedSum = np.sum(np.multiply(domain, kernel))
 
-    for i in range(imgCols):
-        y = i + kCols
-        if y <= imgCols:
-            numCols +=1
+                    if weightedSum > 1:
+                        weightedSum = 1
+                    elif weightedSum < 0:
+                        weightedSum = 0
 
-    return numRows, numCols
-
-def addPadding(image, padW, padH, isColour) -> np.ndarray:
-    if(isColour):
-        imageWithPadding = np.zeros(shape=(image.shape[0] + padH * 2, image.shape[1] + padW * 2, 3), dtype=np.uint8)
-        imageWithPadding[padH:-padH, padW:-padW] = image
+                    convolvedImage[i, j, ch] = weightedSum*255
     else:
-        imageWithPadding = np.zeros(shape=(image.shape[0]+ padH*2, image.shape[1] + padW*2),dtype=np.uint8)
-        imageWithPadding[padH:-padH, padW:-padW] = image
-    return imageWithPadding
+        for i in range(imageHeight):
+            for j in range(imageWidth):
+                domain = paddedImage[i:i + kWidth, j:j + kHeight]
+                weightedSum = np.sum(np.multiply(domain, kernel))
 
-def invertMat(matrix) -> np.ndarray:
+                if weightedSum > 1:
+                    weightedSum = 1
+                elif weightedSum < 0:
+                    weightedSum = 0
+
+                convolvedImage[i,j] = weightedSum*255
+    return convolvedImage
+
+def invertMat(matrix) -> np.ndarray: # Flips matrix
     invertedMat = matrix
     maxX, maxY = matrix.shape[0] - 1, matrix.shape[1] - 1
 
-    for a in range(0,maxX):
-        for b in range(0,maxY):
+    for a in range(0, maxX):
+        for b in range(0, maxY):
             invertedMat[a][b] = matrix[maxX-a][maxY-b]
 
     return invertedMat
