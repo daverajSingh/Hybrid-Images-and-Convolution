@@ -23,24 +23,29 @@ def myHybridImages(lowImage: np.ndarray, lowSigma: float, highImage: np.ndarray,
         a Gaussian of s.d. highSigma. The resultant image has the same size as the input images.
     :rtype numpy.ndarray
     """
-    # Your code here.
+    # Assumes both images are either colour or greyscale
+    isColour = len(lowImage.shape) == 3
 
+    # Generates Low Pass Image
     lowPassImage = getLowImage(lowSigma, lowImage)
+
+    # Generates High Pass Image
     highpassImage = getHighImage(highSigma, highImage)
 
+    # Combines both images to get Hybrid
     hybridImage = lowPassImage + highpassImage
 
-    for i in range(hybridImage.shape[0]):
-        for j in range(hybridImage.shape[1]):
-            for k in range(hybridImage.shape[2]):
 
-                if hybridImage[i, j, k] < 0:
-                    hybridImage[i, j, k] = 0
+    # Clip values in between 0 and 255
+    for x in range(len(hybridImage)):
+        for y in range(len(hybridImage[0])):
+            if isColour:
+                for z in range(len(hybridImage[0][0])):
+                    hybridImage[x][y][z] = max(min(hybridImage[x][y][z], 255), 0)
+            else:
+                hybridImage[x][y] = max(min(hybridImage[x][y], 255), 0)
 
-                elif hybridImage[i, j, k] > 255:
-                    hybridImage[i, j, k] = 255
-
-    return hybridImage
+    return hybridImage.astype(np.uint8)
 
 
 def makeGaussianKernel(sigma: float) -> np.ndarray:
@@ -49,6 +54,7 @@ def makeGaussianKernel(sigma: float) -> np.ndarray:
     The kernel values should sum to 1.0, and the size should be floor(8*sigma+1) or
     floor(8*sigma+1)+1 (whichever is odd) as per the assignment specification.
     """
+    # Calculate size as to spec
     size = np.floor(8*sigma+1)
     if size % 2 == 0:
         size += 1
@@ -64,15 +70,13 @@ def makeGaussianKernel(sigma: float) -> np.ndarray:
             diff = (y - center) ** 2 + (x - center) ** 2
             kernel[y, x] = np.exp(-diff / (2 * sigma ** 2))
 
-    # Normalise
+    # Normalise Kernel
     kernel = kernel / np.sum(kernel)
 
     return kernel
 
 def getLowImage(lowSigma, lowImage) -> np.ndarray:
-    lowKernel = makeGaussianKernel(lowSigma)
-    return convolve(lowImage, lowKernel)
+    return convolve(lowImage, makeGaussianKernel(lowSigma))
 
 def getHighImage(highSigma, highImage) -> np.ndarray:
-    highImageVersion = (highImage - getLowImage(highSigma, highImage))
-    return highImageVersion
+    return (highImage - getLowImage(highSigma, highImage))

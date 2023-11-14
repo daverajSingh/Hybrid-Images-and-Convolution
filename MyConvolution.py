@@ -36,6 +36,7 @@ def convolve(image: np.ndarray, kernel: np.ndarray) -> np.ndarray:
 
     # Create Zero-Padded Image
     if isColour:
+        # 3D Array of correct shape
         paddedImage = np.zeros((imageHeight + 2*paddingHeight, imageWidth + 2*paddingWidth, 3), dtype=np.float64)
         paddedImage[paddingHeight:imageEdgeY, paddingWidth:imageEdgeX] = image
 
@@ -43,6 +44,7 @@ def convolve(image: np.ndarray, kernel: np.ndarray) -> np.ndarray:
         convolvedImage = np.zeros((imageHeight, imageWidth, 3), dtype=np.integer)
 
     else:
+        # 2D Array of correct shape
         paddedImage = np.zeros((imageHeight + 2 * paddingHeight, imageWidth + 2 * paddingWidth), dtype=np.float64)
         paddedImage[paddingHeight:imageEdgeY, paddingWidth:imageEdgeX] = image
 
@@ -51,39 +53,49 @@ def convolve(image: np.ndarray, kernel: np.ndarray) -> np.ndarray:
 
 
     if isColour:
-        for ch in range(3): # Iterates through each channel
+        for ch in range(3): # Iterates through each channel if colour
             for i in range(imageHeight):
                 for j in range(imageWidth):
+                    # Gets domain of where kernel is applied
                     domain = paddedImage[i:i+kWidth, j:j+kHeight, ch]
+
+                    # Calculates weighted sum of individual point
                     weightedSum = np.sum(np.multiply(domain, kernel))
 
+                    # Clips values to in between 0 and 1
                     if weightedSum > 1:
                         weightedSum = 1
                     elif weightedSum < 0:
                         weightedSum = 0
 
+                    # Adds to array and multiplies by 255
                     convolvedImage[i, j, ch] = weightedSum*255
     else:
         for i in range(imageHeight):
             for j in range(imageWidth):
+                # Gets domain of where kernel is applied
                 domain = paddedImage[i:i + kWidth, j:j + kHeight]
+
+                # Calculates weighted sum of individual point
                 weightedSum = np.sum(np.multiply(domain, kernel))
 
+                # Clips values to in between 0 and 1
                 if weightedSum > 1:
                     weightedSum = 1
                 elif weightedSum < 0:
                     weightedSum = 0
 
+                # Adds to array and multiplies by 255
                 convolvedImage[i,j] = weightedSum*255
     return convolvedImage
 
-def invertMat(matrix) -> np.ndarray: # Flips matrix
+def invertMat(matrix) -> np.ndarray: # Flips matrix in x and y direction
     invertedMat = matrix
     maxX, maxY = matrix.shape[0] - 1, matrix.shape[1] - 1
 
-    for a in range(0, maxX):
-        for b in range(0, maxY):
-            invertedMat[a][b] = matrix[maxX-a][maxY-b]
+    for x in range(0, maxX):
+        for y in range(0, maxY):
+            invertedMat[x][y] = matrix[maxX-x][maxY-y]
 
     return invertedMat
 

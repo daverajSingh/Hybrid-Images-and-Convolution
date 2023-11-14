@@ -5,25 +5,26 @@ import matplotlib.pyplot as plt
 from PIL import Image
 import cv2
 
-img = cv2.imread('C:/Users/daver/PycharmProjects/COMP3204Handin1/hybrid-images/data/dog.bmp')
+img = cv2.imread('C:/Users/daver/PycharmProjects/COMP3204Handin1/Donald_Trump_official_portrait (1) (1).jpg')
 img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-img2 = cv2.imread('C:/Users/daver/PycharmProjects/COMP3204Handin1/hybrid-images/data/cat.bmp')
+img2 = cv2.imread('C:/Users/daver/PycharmProjects/COMP3204Handin1/Vladimir_Putin_-_2012.jpg')
 img2 = cv2.cvtColor(img2, cv2.COLOR_BGR2RGB)
 
-def test1(a,b):
+def test1(a, b):
     lowImage = h.getLowImage(a, img)
     plt.imshow(lowImage)
     plt.show()
+
     highImage = h.getHighImage(b, img2)
     plt.imshow(highImage)
     plt.show()
+
     hyb = h.myHybridImages(img, a, img2, b)
     plt.imshow(hyb)
     plt.show()
-
+    plt.imsave('save.png', hyb)
 
 def test2(img):
-    img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     sharpen = np.array([[0, -1, 0], [-1, 5, -1], [0, -1, 0]])
     imgC = c.convolve(img,sharpen)
     plt.imshow(img)
@@ -41,6 +42,8 @@ def test2(img):
     num_false = np.prod(comp.shape) - num_true
 
     print(num_true / (num_false + num_true))
+    print(img.shape)
+    print(imgC.shape)
 
 def hybrid_images(image1, image2, sigma_low, sigma_high):
     # Create low-pass filter kernel
@@ -60,7 +63,4 @@ def hybrid_images(image1, image2, sigma_low, sigma_high):
 
     return hybrid_image
 
-low = cv2.filter2D(img, -1,  h.makeGaussianKernel(2), borderType=cv2.BORDER_CONSTANT)
-high = img2 - cv2.filter2D(img2, -1, h.makeGaussianKernel(10), borderType=cv2.BORDER_CONSTANT)
-
-test2(img)
+test1(3,15)
